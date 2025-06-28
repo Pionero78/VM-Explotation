@@ -503,10 +503,6 @@ const PrintPanel: React.FC = () => {
           <Printer className="h-4 w-4" />
           Imprimer la liste
         </Button>
-        <Button className="flex items-center gap-2" onClick={exportListToExcel}>
-          <FileSpreadsheet className="h-4 w-4" />
-          Exporter la liste imprimable (Excel)
-        </Button>
       </CardContent>
     </Card>
   );
