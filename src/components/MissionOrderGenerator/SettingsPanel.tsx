@@ -14,10 +14,19 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Upload } from "lucide-react";
 import { MissionOrderSettings } from "@/types";
 import CalibrationPresets from "./CalibrationPresets";
 import CustomPresetSlots from "./CustomPresetSlots";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 import { toast } from "sonner";
 
@@ -90,6 +99,70 @@ const SettingsPanel: React.FC = () => {
       toast.success(
         "Paramètres d'interface réinitialisés aux valeurs par défaut",
       );
+    };
+
+    const [showImportDialog, setShowImportDialog] = React.useState(false);
+    const [importedConfig, setImportedConfig] = React.useState<any>(null);
+    const [selectedSlot, setSelectedSlot] = React.useState<number>(1);
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+    const handleImportFromExternal = () => {
+      if (fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    };
+
+    const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      if (!file.name.endsWith(".json")) {
+        toast.error("Veuillez sélectionner un fichier .json");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const content = e.target?.result as string;
+          const config = JSON.parse(content);
+
+          if (!config.settings || typeof config.settings !== "object") {
+            toast.error("Format de fichier invalide");
+            return;
+          }
+
+          setImportedConfig(config);
+          setShowImportDialog(true);
+        } catch (error) {
+          console.error("Error parsing imported file:", error);
+          toast.error("Erreur lors de la lecture du fichier");
+        }
+      };
+      reader.readAsText(file);
+
+      // Reset file input
+      if (event.target) {
+        event.target.value = "";
+      }
+    };
+
+    const confirmImport = () => {
+      if (!importedConfig) return;
+
+      const slotKey = `preset_slot_${selectedSlot}`;
+      const presetData = {
+        settings: importedConfig.settings,
+        timestamp: new Date().toISOString(),
+      };
+
+      localStorage.setItem(slotKey, JSON.stringify(presetData));
+      toast.success(
+        `Configuration importée dans l'Emplacement ${selectedSlot}`,
+      );
+
+      setShowImportDialog(false);
+      setImportedConfig(null);
     };
 
     return (
@@ -732,12 +805,31 @@ const SettingsPanel: React.FC = () => {
 
             <TabsContent value="preselection" className="space-y-4">
               <div className="grid gap-4">
-                <h3 className="text-lg font-semibold">
-                  Préselection des paramètres
-                </h3>
-                <p className="text-sm text-gray-600">
-                  Sauvegardez et chargez vos configurations de calibrage
-                </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">
+                      Préselection des paramètres
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Sauvegardez et chargez vos configurations de calibrage
+                    </p>
+                  </div>
+                  <Button
+                    onClick={handleImportFromExternal}
+                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <Upload className="h-4 w-4" />
+                    Importer depuis l'extérieur
+                  </Button>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".json"
+                  onChange={handleFileSelect}
+                  style={{ display: "none" }}
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {[1, 2, 3, 4].map((slotId) => {
@@ -993,6 +1085,74 @@ const SettingsPanel: React.FC = () => {
                   })}
                 </div>
               </div>
+
+              <Dialog
+                open={showImportDialog}
+                onOpenChange={setShowImportDialog}
+              >
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Importer une configuration</DialogTitle>
+                    <DialogDescription>
+                      Sélectionnez l'emplacement où assigner cette configuration
+                      importée.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 gap-2">
+                      {[1, 2, 3, 4].map((slotId) => (
+                        <Button
+                          key={slotId}
+                          variant={
+                            selectedSlot === slotId ? "default" : "outline"
+                          }
+                          onClick={() => setSelectedSlot(slotId)}
+                          className="h-16 flex flex-col items-center justify-center"
+                        >
+                          <span className="text-sm font-semibold">
+                            Emplacement
+                          </span>
+                          <span className="text-lg">{slotId}</span>
+                        </Button>
+                      ))}
+                    </div>
+
+                    {importedConfig && (
+                      <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                        <p>
+                          <strong>Configuration détectée:</strong>
+                        </p>
+                        <p>
+                          Date:{" "}
+                          {importedConfig.timestamp
+                            ? new Date(
+                                importedConfig.timestamp,
+                              ).toLocaleDateString()
+                            : "Inconnue"}
+                        </p>
+                        <p>
+                          Paramètres:{" "}
+                          {Object.keys(importedConfig.settings || {}).length}{" "}
+                          éléments
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowImportDialog(false)}
+                    >
+                      Annuler
+                    </Button>
+                    <Button onClick={confirmImport}>
+                      Importer dans l'Emplacement {selectedSlot}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </TabsContent>
           </Tabs>
         </CardContent>

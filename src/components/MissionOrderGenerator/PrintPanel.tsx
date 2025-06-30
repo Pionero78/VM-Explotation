@@ -9,10 +9,21 @@ import {
 } from "@/components/ui/card";
 import { getEmploymentForName } from "@/data/groupData";
 import { formatDate } from "@/utils/formatDate";
-import { Printer, FileSpreadsheet } from "lucide-react";
+import { Printer, FileSpreadsheet, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 import { Person } from "@/types";
 import * as XLSX from "xlsx";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import React from "react";
 
 const PrintPanel: React.FC = () => {
   const {
@@ -51,6 +62,10 @@ const PrintPanel: React.FC = () => {
   );
   const tdaMembers = orderedSelectedNames.filter((m) => m.group === "TDA");
   const fixeMembers = orderedSelectedNames.filter((m) => m.group === "Fixe");
+
+  const [showPartialPrintDialog, setShowPartialPrintDialog] =
+    React.useState(false);
+  const [selectedForPrint, setSelectedForPrint] = React.useState<string[]>([]);
 
   const printMultipleOrders = () => {
     if (selectedNames.length === 0) {
@@ -140,6 +155,130 @@ const PrintPanel: React.FC = () => {
         description: "Veuillez autoriser les fenêtres popup pour ce site.",
       });
     }
+  };
+
+  const handlePartialPrint = () => {
+    if (selectedNames.length === 0) {
+      toast.error("Aucun technicien sélectionné", {
+        description:
+          "Veuillez sélectionner au moins un technicien pour imprimer un ordre de mission.",
+      });
+      return;
+    }
+
+    setSelectedForPrint([]);
+    setShowPartialPrintDialog(true);
+  };
+
+  const printSelectedOrders = () => {
+    if (selectedForPrint.length === 0) {
+      toast.error("Aucun technicien sélectionné pour l'impression", {
+        description: "Veuillez sélectionner au moins un technicien.",
+      });
+      return;
+    }
+
+    const selectedMembers = orderedSelectedNames.filter((member) =>
+      selectedForPrint.includes(member.name),
+    );
+
+    // Obtenir les paramètres de mise en page
+    const nomTop = settings.nomTop;
+    const nomLeft = settings.nomLeft;
+    const fieldSpacing = settings.fieldSpacing;
+    const fontFamily = settings.fontFamily;
+    const fontSize = settings.fontSize;
+    const signatairePosTop = settings.signatairePosTop;
+    const signatairePosLeft = settings.signatairePosLeft;
+    const datePosTop = settings.datePosTop;
+    const datePosLeft = settings.datePosLeft;
+    const fontWeight = settings.omBoldEnabled ? "bold" : "normal";
+
+    let printContent = "";
+    selectedMembers.forEach((item) => {
+      // Créer le texte du transport avec matricule si nécessaire
+      const transportText =
+        formData.transport === "Véhicule personnel" && formData.matricule
+          ? `${formData.transport} (${formData.matricule})`
+          : formData.transport;
+
+      printContent += `
+        <div class="print-area">
+          <div class="print-content">
+            <div class="field-position" style="top: ${nomTop}mm; left: ${nomLeft}mm; font-family: ${fontFamily}; font-size: ${fontSize}pt; font-weight: ${fontWeight}">${item.name}</div>
+            <div class="field-position" style="top: ${parseInt(String(nomTop)) + parseInt(String(fieldSpacing))}mm; left: ${nomLeft}mm; font-family: ${fontFamily}; font-size: ${fontSize}pt; font-weight: ${fontWeight}">${getEmploymentForName(item.name, currentGroupData)}</div>
+            <div class="field-position" style="top: ${parseInt(String(nomTop)) + 2 * parseInt(String(fieldSpacing))}mm; left: ${nomLeft}mm; font-family: ${fontFamily}; font-size: ${fontSize}pt; font-weight: ${fontWeight}">${formData.residence}</div>
+            <div class="field-position" style="top: ${parseInt(String(nomTop)) + 3 * parseInt(String(fieldSpacing))}mm; left: ${nomLeft}mm; font-family: ${fontFamily}; font-size: ${fontSize}pt; font-weight: ${fontWeight}">${formData.destination}</div>
+            <div class="field-position" style="top: ${parseInt(String(nomTop)) + 4 * parseInt(String(fieldSpacing))}mm; left: ${nomLeft}mm; font-family: ${fontFamily}; font-size: ${fontSize}pt; font-weight: ${fontWeight}">${formData.motif}</div>
+            <div class="field-position" style="top: ${parseInt(String(nomTop)) + 5 * parseInt(String(fieldSpacing))}mm; left: ${nomLeft}mm; font-family: ${fontFamily}; font-size: ${fontSize}pt; font-weight: ${fontWeight}">${transportText}</div>
+            <div class="field-position" style="top: ${parseInt(String(nomTop)) + 6 * parseInt(String(fieldSpacing))}mm; left: ${nomLeft}mm; font-family: ${fontFamily}; font-size: ${fontSize}pt; font-weight: ${fontWeight}">${formData.dateDepart ? formatDate(formData.dateDepart) : ""}</div>
+            <div class="field-position" style="top: ${parseInt(String(nomTop)) + 7 * parseInt(String(fieldSpacing))}mm; left: ${nomLeft}mm; font-family: ${fontFamily}; font-size: ${fontSize}pt; font-weight: ${fontWeight}">${formData.dateRetour ? formatDate(formData.dateRetour) : ""}</div>
+            <div class="field-position" style="top: ${signatairePosTop}mm; left: ${signatairePosLeft}mm; font-family: ${fontFamily}; font-size: ${fontSize}pt; font-weight: ${fontWeight}">${formData.signataire || ""}</div>
+            <div class="field-position" style="top: ${datePosTop}mm; left: ${datePosLeft}mm; font-family: ${fontFamily}; font-size: ${fontSize}pt; font-weight: ${fontWeight}">${formData.date ? formatDate(formData.date) : ""}</div>
+          </div>
+        </div>
+      `;
+    });
+
+    addToHistory("OM");
+
+    const printWindow = window.open("", "_blank");
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Ordres de Mission Sélectionnés</title>
+            <style>
+              @media print {
+                body { margin: 0; padding: 0; }
+                .print-area { width: 210mm; height: 297mm; position: relative; page-break-after: always; }
+                .print-content { position: absolute; width: 100%; height: 100%; }
+                .field-position { position: absolute; }
+                @page {
+                  margin: 0;
+                  size: A4;
+                }
+                @page :first {
+                  margin-top: 0;
+                }
+                @page :left {
+                  margin-left: 0;
+                }
+                @page :right {
+                  margin-right: 0;
+                }
+              }
+            </style>
+          </head>
+          <body onload="window.print(); window.close();">
+            ${printContent}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } else {
+      toast.error("Impossible d'ouvrir la fenêtre d'impression", {
+        description: "Veuillez autoriser les fenêtres popup pour ce site.",
+      });
+    }
+
+    setShowPartialPrintDialog(false);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedForPrint.length === orderedSelectedNames.length) {
+      setSelectedForPrint([]);
+    } else {
+      setSelectedForPrint(orderedSelectedNames.map((member) => member.name));
+    }
+  };
+
+  const toggleMemberSelection = (memberName: string) => {
+    setSelectedForPrint((prev) =>
+      prev.includes(memberName)
+        ? prev.filter((name) => name !== memberName)
+        : [...prev, memberName],
+    );
   };
 
   const exportListToExcel = () => {
@@ -491,19 +630,106 @@ const PrintPanel: React.FC = () => {
         <CardTitle>Imprimer</CardTitle>
         <CardDescription>Générez et imprimez les documents</CardDescription>
       </CardHeader>
-      <CardContent className="flex justify-center gap-4">
+      <CardContent className="flex justify-center gap-6 flex-wrap">
         <Button
-          className="flex items-center gap-2"
+          className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
           onClick={printMultipleOrders}
         >
-          <Printer className="h-4 w-4" />
+          <Printer className="h-5 w-5" />
           Imprimer OM
         </Button>
-        <Button className="flex items-center gap-2" onClick={printList}>
-          <Printer className="h-4 w-4" />
+        <Button
+          className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+          onClick={handlePartialPrint}
+        >
+          <CheckSquare className="h-5 w-5" />
+          Imprimer des OM sélectionnés
+        </Button>
+        <Button
+          className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+          onClick={printList}
+        >
+          <Printer className="h-5 w-5" />
           Imprimer la liste
         </Button>
+        <Button
+          className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
+          onClick={exportListToExcel}
+        >
+          <FileSpreadsheet className="h-5 w-5" />
+          Exporter la liste imprimable (Excel)
+        </Button>
       </CardContent>
+
+      <Dialog
+        open={showPartialPrintDialog}
+        onOpenChange={setShowPartialPrintDialog}
+      >
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Sélectionner les techniciens à imprimer</DialogTitle>
+            <DialogDescription>
+              Choisissez les techniciens pour lesquels vous souhaitez imprimer
+              les ordres de mission.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                {selectedForPrint.length} / {orderedSelectedNames.length}{" "}
+                sélectionnés
+              </span>
+              <Button variant="outline" size="sm" onClick={toggleSelectAll}>
+                {selectedForPrint.length === orderedSelectedNames.length
+                  ? "Tout désélectionner"
+                  : "Tout sélectionner"}
+              </Button>
+            </div>
+
+            <div className="grid gap-2 max-h-96 overflow-y-auto">
+              {orderedSelectedNames.map((member) => (
+                <div
+                  key={member.name}
+                  className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded"
+                >
+                  <Checkbox
+                    id={`member-${member.name}`}
+                    checked={selectedForPrint.includes(member.name)}
+                    onCheckedChange={() => toggleMemberSelection(member.name)}
+                  />
+                  <label
+                    htmlFor={`member-${member.name}`}
+                    className="flex-1 cursor-pointer text-sm"
+                  >
+                    <span className="font-medium">{member.name}</span>
+                    <span className="text-gray-500 ml-2">({member.group})</span>
+                    <span className="text-gray-400 ml-2 text-xs">
+                      {getEmploymentForName(member.name, currentGroupData)}
+                    </span>
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPartialPrintDialog(false)}
+            >
+              Annuler
+            </Button>
+            <Button
+              onClick={printSelectedOrders}
+              disabled={selectedForPrint.length === 0}
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Imprimer {selectedForPrint.length} OM
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
