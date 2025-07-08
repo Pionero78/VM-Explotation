@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
+import { LogOut, User } from "lucide-react";
 
 import GroupsPanel from "./GroupsPanel";
 import GroupSelectionModal from "./GroupSelectionModal";
@@ -24,6 +25,7 @@ import ImportPanel from "./ImportPanel";
 import PresetSlots from "./PresetSlots";
 import AddTechnician from "./AddTechnician";
 import { useMissionOrder } from "@/context/MissionOrderContext";
+import { useAuth } from "@/context/AuthContext";
 import { GroupType } from "@/types";
 
 const Layout: React.FC = () => {
@@ -35,6 +37,7 @@ const Layout: React.FC = () => {
     useState<boolean>(false);
   const { setCurrentGroupId, getCurrentGroupData } = useMissionOrder();
   const { toast } = useToast();
+  const { signOut, user } = useAuth();
 
   const correctPassword = "@Pioneer1430";
 
@@ -84,13 +87,46 @@ const Layout: React.FC = () => {
     }
   };
 
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur de déconnexion",
+        description: "Une erreur s'est produite lors de la déconnexion.",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto max-w-6xl py-6 px-4">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            OM & Lists Generator
-          </h1>
+        <div className="flex justify-between items-center mb-6">
+          <div className="text-center flex-1">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              OM & Lists Generator
+            </h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <User className="h-4 w-4" />
+              <span>{user?.email}</span>
+            </div>
+            <Button
+              onClick={handleSignOut}
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300 hover:border-red-400 transition-all duration-200"
+            >
+              <LogOut className="h-4 w-4" />
+              Se déconnecter
+            </Button>
+          </div>
         </div>
 
         <Tabs
