@@ -25,8 +25,8 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     // Optimize for production deployment
-    target: "es2015",
-    minify: mode === "production" ? "terser" : "esbuild",
+    target: "es2020",
+    minify: "esbuild",
     sourcemap: mode === "development",
     rollupOptions: {
       output: {

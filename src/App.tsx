@@ -5,25 +5,39 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useRoutes } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
-// Conditional import for tempo routes
-let routes: any = null;
-try {
-  if (import.meta.env.VITE_TEMPO === "true") {
-    routes = await import("tempo-routes")
-      .then((m) => m.default)
-      .catch(() => null);
-  }
-} catch (error) {
-  console.warn("Tempo routes not available:", error);
-}
-
 // Component to handle Tempo routes within Router context
 const TempoRoutes = () => {
+  const [routes, setRoutes] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadRoutes = async () => {
+      try {
+        if (import.meta.env.VITE_TEMPO === "true") {
+          const routesModule = await import("tempo-routes")
+            .then((m) => m.default)
+            .catch(() => null);
+          setRoutes(routesModule);
+        }
+      } catch (error) {
+        console.warn("Tempo routes not available:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRoutes();
+  }, []);
+
+  if (loading) {
+    return null;
+  }
+
   if (import.meta.env.VITE_TEMPO === "true" && routes) {
     try {
       return useRoutes(routes);
