@@ -142,26 +142,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [resetSessionTimer]);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (!error) {
-      setRememberedEmail(email);
-      setIsSessionLocked(false);
-      startSessionTimer();
+      if (!error) {
+        setRememberedEmail(email);
+        setIsSessionLocked(false);
+        startSessionTimer();
+      }
+
+      return { error };
+    } catch (error) {
+      console.error("Sign in error:", error);
+      return { error: { message: "Erreur de connexion. Veuillez réessayer." } };
     }
-
-    return { error };
   };
 
   const signUp = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    return { error };
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      return { error };
+    } catch (error) {
+      console.error("Sign up error:", error);
+      return {
+        error: {
+          message: "Erreur lors de la création du compte. Veuillez réessayer.",
+        },
+      };
+    }
   };
 
   const signOut = async () => {
@@ -200,17 +214,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return { error: { message: "Email non trouvé" } };
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: rememberedEmail,
-      password,
-    });
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: rememberedEmail,
+        password,
+      });
 
-    if (!error) {
-      setIsSessionLocked(false);
-      startSessionTimer();
+      if (!error) {
+        setIsSessionLocked(false);
+        startSessionTimer();
+      }
+
+      return { error };
+    } catch (error) {
+      console.error("Unlock session error:", error);
+      return {
+        error: {
+          message: "Erreur lors du déverrouillage. Veuillez réessayer.",
+        },
+      };
     }
-
-    return { error };
   };
 
   const value = {

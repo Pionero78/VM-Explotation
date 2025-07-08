@@ -14,12 +14,36 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
-    tempo(),
+    // Only include tempo plugin in development or when TEMPO env is set
+    process.env.TEMPO === "true" && tempo(),
     mode === "development" && componentTagger(),
   ].filter(Boolean),
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  build: {
+    // Optimize for production deployment
+    target: "es2015",
+    minify: "terser",
+    sourcemap: mode === "development",
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ["react", "react-dom"],
+          supabase: ["@supabase/supabase-js"],
+          ui: [
+            "@radix-ui/react-dialog",
+            "@radix-ui/react-select",
+            "@radix-ui/react-tabs",
+          ],
+        },
+      },
+    },
+  },
+  define: {
+    // Ensure environment variables are properly defined
+    "import.meta.env.VITE_TEMPO": JSON.stringify(process.env.TEMPO || "false"),
   },
 }));
