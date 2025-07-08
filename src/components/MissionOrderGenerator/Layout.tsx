@@ -25,7 +25,7 @@ import ImportPanel from "./ImportPanel";
 import PresetSlots from "./PresetSlots";
 import AddTechnician from "./AddTechnician";
 import { useMissionOrder } from "@/context/MissionOrderContext";
-import { useAuth } from "@/context/AuthContext";
+// import { useAuth } from "@/context/AuthContext"; // Commented out for external deployment compatibility
 import { GroupType } from "@/types";
 
 const Layout: React.FC = () => {
@@ -37,7 +37,9 @@ const Layout: React.FC = () => {
     useState<boolean>(false);
   const { setCurrentGroupId, getCurrentGroupData } = useMissionOrder();
   const { toast } = useToast();
-  const { signOut, user } = useAuth();
+  // const { signOut, user } = useAuth(); // Commented out for external deployment compatibility
+  const user = null; // Fallback for external deployments
+  const signOut = async () => {}; // Fallback function
 
   const correctPassword = "@Pioneer1430";
 
@@ -113,19 +115,23 @@ const Layout: React.FC = () => {
             </h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <User className="h-4 w-4" />
-              <span>{user?.email}</span>
-            </div>
-            <Button
-              onClick={handleSignOut}
-              variant="outline"
-              size="sm"
-              className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300 hover:border-red-400 transition-all duration-200"
-            >
-              <LogOut className="h-4 w-4" />
-              Se déconnecter
-            </Button>
+            {user && (
+              <>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <User className="h-4 w-4" />
+                  <span>{user?.email}</span>
+                </div>
+                <Button
+                  onClick={handleSignOut}
+                  variant="outline"
+                  size="sm"
+                  className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300 hover:border-red-400 transition-all duration-200"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Se déconnecter
+                </Button>
+              </>
+            )}
           </div>
         </div>
 

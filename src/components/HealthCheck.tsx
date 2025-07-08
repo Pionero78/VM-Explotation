@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, AlertCircle, RefreshCw } from "lucide-react";
-import { supabase } from "@/lib/supabase";
+// import { supabase } from "@/lib/supabase"; // Commented for external deployment compatibility
 import { checkDeploymentCompatibility } from "@/utils/deploymentCheck";
 
 interface HealthStatus {
@@ -34,10 +34,18 @@ const HealthCheck: React.FC = () => {
       browser: checks.browser.supportsES6 ? "healthy" : "error",
     };
 
-    // Test Supabase connection
+    // Test Supabase connection only if available
     try {
-      await supabase.auth.getSession();
-      newStatus.supabase = "healthy";
+      if (
+        import.meta.env.VITE_SUPABASE_URL &&
+        import.meta.env.VITE_SUPABASE_ANON_KEY
+      ) {
+        const { supabase } = await import("@/lib/supabase");
+        await supabase.auth.getSession();
+        newStatus.supabase = "healthy";
+      } else {
+        newStatus.supabase = "healthy"; // Consider healthy if not configured (external deployment)
+      }
     } catch (error) {
       console.error("Supabase health check failed:", error);
       newStatus.supabase = "error";

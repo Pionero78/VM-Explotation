@@ -6,8 +6,7 @@ import { BrowserRouter, Routes, Route, useRoutes } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { useState, useEffect } from "react";
-import { AuthProvider } from "@/context/AuthContext";
-import ProtectedRoute from "@/components/Auth/ProtectedRoute";
+import React from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Component to handle Tempo routes within Router context
@@ -67,34 +66,43 @@ const App = () => {
       }),
   );
 
+  // Use deployment wrapper to handle different environments
+  const AppContent = () => {
+    return (
+      <React.Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+            <div className="flex flex-col items-center space-y-4">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+              <p className="text-gray-300">Chargement de l'application...</p>
+            </div>
+          </div>
+        }
+      >
+        <Index />
+      </React.Suspense>
+    );
+  };
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <TempoRoutes />
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                {/* Add this before the catchall route */}
-                {import.meta.env.VITE_TEMPO === "true" && (
-                  <Route path="/tempobook/*" />
-                )}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <TempoRoutes />
+            <Routes>
+              <Route path="/" element={<AppContent />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              {/* Add this before the catchall route */}
+              {import.meta.env.VITE_TEMPO === "true" && (
+                <Route path="/tempobook/*" />
+              )}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   );
