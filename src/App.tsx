@@ -8,6 +8,7 @@ import NotFound from "./pages/NotFound";
 import { useState, useEffect } from "react";
 import React from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import DeploymentWrapper from "@/components/DeploymentWrapper";
 
 // Component to handle Tempo routes within Router context
 const TempoRoutes = () => {
@@ -69,18 +70,20 @@ const App = () => {
   // Use deployment wrapper to handle different environments
   const AppContent = () => {
     return (
-      <React.Suspense
-        fallback={
-          <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-            <div className="flex flex-col items-center space-y-4">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-              <p className="text-gray-300">Chargement de l'application...</p>
+      <DeploymentWrapper>
+        <React.Suspense
+          fallback={
+            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+              <div className="flex flex-col items-center space-y-4">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+                <p className="text-gray-300">Chargement de l'application...</p>
+              </div>
             </div>
-          </div>
-        }
-      >
-        <Index />
-      </React.Suspense>
+          }
+        >
+          <Index />
+        </React.Suspense>
+      </DeploymentWrapper>
     );
   };
 

@@ -1,4 +1,6 @@
 import React from "react";
+import { AuthProvider } from "@/context/AuthContext";
+import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 
 interface DeploymentWrapperProps {
   children: React.ReactNode;
@@ -24,30 +26,10 @@ const DeploymentWrapper: React.FC<DeploymentWrapperProps> = ({ children }) => {
   // For Tempo environment or when Supabase is configured, use authentication
   if (hasSupabaseConfig) {
     try {
-      const AuthProvider = React.lazy(() =>
-        import("@/context/AuthContext").then((m) => ({
-          default: m.AuthProvider,
-        })),
-      );
-      const ProtectedRoute = React.lazy(
-        () => import("@/components/Auth/ProtectedRoute"),
-      );
-
       return (
-        <React.Suspense
-          fallback={
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-              <div className="flex flex-col items-center space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                <p className="text-gray-300">Chargement...</p>
-              </div>
-            </div>
-          }
-        >
-          <AuthProvider>
-            <ProtectedRoute>{children}</ProtectedRoute>
-          </AuthProvider>
-        </React.Suspense>
+        <AuthProvider>
+          <ProtectedRoute>{children}</ProtectedRoute>
+        </AuthProvider>
       );
     } catch (error) {
       console.warn(

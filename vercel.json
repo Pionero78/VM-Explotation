@@ -11,6 +11,32 @@
     }
   ],
   "env": {
-    "VITE_TEMPO": "false"
-  }
+    "VITE_TEMPO": "false",
+    "VITE_SUPABASE_URL": "https://bqhvrhuwgxvbagdjlgra.supabase.co",
+    "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxaHZyaHV3Z3h2YmFnZGpsZ3JhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE4MjIxNDQsImV4cCI6MjA2NzM5ODE0NH0.tN25bwXHn0eTG18dsg26hRxpFZ6z-g648KKlJpYvVVs"
+  },
+  "functions": {
+    "app/api/**/*.js": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ]
 }

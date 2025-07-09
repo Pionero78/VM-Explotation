@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
-import { Eye, EyeOff, Lock, Shield } from "lucide-react";
+import { Lock, Shield } from "lucide-react";
 
 const SessionLockScreen: React.FC = () => {
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -77,26 +77,15 @@ const SessionLockScreen: React.FC = () => {
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <Input
-                type={showPassword ? "text" : "password"}
+                type="password"
                 placeholder="Saisissez votre mot de passe"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoFocus
                 autoComplete="new-password"
-                className="pl-10 pr-10 h-12 text-base bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-yellow-500 focus:ring-yellow-500/20 rounded-xl"
+                className="pl-10 h-12 text-base bg-gray-700/50 border-gray-600 text-white placeholder-gray-400 focus:border-yellow-500 focus:ring-yellow-500/20 rounded-xl"
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-5 w-5" />
-                ) : (
-                  <Eye className="h-5 w-5" />
-                )}
-              </button>
             </div>
 
             {/* Error message */}
