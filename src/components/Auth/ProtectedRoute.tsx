@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading, isSessionLocked } = useAuth();
+  const { user, loading, isSessionLocked, rememberedEmail } = useAuth();
 
   if (loading) {
     return (
@@ -22,6 +22,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   }
 
   if (!user) {
+    // Check if we have a remembered email for reconnection
+    const storedEmail = localStorage.getItem("rememberedEmail");
+    if (storedEmail || rememberedEmail) {
+      return (
+        <AuthForm
+          isReconnect={true}
+          rememberedEmail={storedEmail || rememberedEmail}
+        />
+      );
+    }
     return <AuthForm />;
   }
 

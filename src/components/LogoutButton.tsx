@@ -25,8 +25,11 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
   const handleLogout = async () => {
     try {
       await signOut();
+      // The signOut function now handles the page reload
     } catch (error) {
       console.error("Logout error:", error);
+      // Fallback: reload page even if signOut fails
+      window.location.reload();
     }
   };
 

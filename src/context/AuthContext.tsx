@@ -81,7 +81,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(session?.user ?? null);
       if (session?.user?.email) {
         setRememberedEmail(session.user.email);
+        localStorage.setItem("rememberedEmail", session.user.email);
         startSessionTimer();
+      } else {
+        // Load remembered email from localStorage if no active session
+        const storedEmail = localStorage.getItem("rememberedEmail");
+        if (storedEmail) {
+          setRememberedEmail(storedEmail);
+        }
       }
       setLoading(false);
     });
@@ -94,12 +101,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(session?.user ?? null);
       if (session?.user?.email) {
         setRememberedEmail(session.user.email);
+        localStorage.setItem("rememberedEmail", session.user.email);
         setIsSessionLocked(false);
         startSessionTimer();
       } else {
         setIsSessionLocked(false);
         if (sessionTimer) {
           clearTimeout(sessionTimer);
+        }
+        // Load remembered email from localStorage if no active session
+        const storedEmail = localStorage.getItem("rememberedEmail");
+        if (storedEmail) {
+          setRememberedEmail(storedEmail);
         }
       }
       setLoading(false);
@@ -150,6 +163,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (!error) {
         setRememberedEmail(email);
+        localStorage.setItem("rememberedEmail", email);
         setIsSessionLocked(false);
         startSessionTimer();
       }
@@ -183,6 +197,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       clearTimeout(sessionTimer);
     }
     setIsSessionLocked(false);
+
+    // Store email in localStorage before clearing it from state
+    if (rememberedEmail) {
+      localStorage.setItem("rememberedEmail", rememberedEmail);
+    }
+
     setRememberedEmail("");
 
     // Clear any cached form data
@@ -207,16 +227,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     await supabase.auth.signOut();
+
+    // Reload the application after sign out
+    window.location.reload();
   };
 
   const unlockSession = async (password: string) => {
-    if (!rememberedEmail) {
+    const emailToUse =
+      rememberedEmail || localStorage.getItem("rememberedEmail");
+    if (!emailToUse) {
       return { error: { message: "Email non trouvé" } };
     }
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: rememberedEmail,
+        email: emailToUse,
         password,
       });
 
