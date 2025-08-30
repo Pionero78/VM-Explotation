@@ -18,6 +18,18 @@ import {
   DropResult,
 } from "react-beautiful-dnd";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Trash2 } from "lucide-react";
 
 interface GroupSelectionModalProps {
   isOpen: boolean;
@@ -35,7 +47,13 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
     getSortedGroupNames,
     updateCustomGroupOrder,
     settings,
+    updateImportedGroupData,
   } = useMissionOrder();
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [technicianToDelete, setTechnicianToDelete] = useState<string | null>(
+    null,
+  );
 
   const sortedNames = getSortedGroupNames(currentGroupId);
   const currentGroupData = getCurrentGroupData();
@@ -59,6 +77,30 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
       toggleNameSelection(nom, currentGroupId);
     }
     onClose();
+  };
+
+  const handleDeleteTechnician = (name: string) => {
+    setTechnicianToDelete(name);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDeleteTechnician = () => {
+    if (technicianToDelete) {
+      const currentData = getCurrentGroupData();
+      const updatedData = { ...currentData };
+
+      // Remove the technician from the group
+      if (
+        updatedData[currentGroupId] &&
+        updatedData[currentGroupId][technicianToDelete]
+      ) {
+        delete updatedData[currentGroupId][technicianToDelete];
+        updateImportedGroupData(updatedData);
+        toast.success(`Technicien ${technicianToDelete} supprimé avec succès`);
+      }
+    }
+    setDeleteConfirmOpen(false);
+    setTechnicianToDelete(null);
   };
 
   const parseFullName = (fullName: string) => {
@@ -156,16 +198,29 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
                                 <div className="w-1/3">{employment}</div>
                               </div>
                             </div>
-                            <Button
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleNameSelection(name, currentGroupId);
-                              }}
-                              className="bg-blue-600 hover:bg-blue-700 text-white ml-2"
-                            >
-                              Sélectionner
-                            </Button>
+                            <div className="flex gap-2 ml-2">
+                              <Button
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleNameSelection(name, currentGroupId);
+                                }}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                              >
+                                Sélectionner
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteTechnician(name);
+                                }}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </Draggable>
@@ -196,6 +251,30 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
             </Button>
           </div>
         </div>
+
+        <AlertDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmation de suppression</AlertDialogTitle>
+              <AlertDialogDescription>
+                Voulez-vous vraiment supprimer le technicien &quot;
+                {technicianToDelete}&quot; ? Cette action est irréversible.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDeleteTechnician}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

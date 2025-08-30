@@ -161,9 +161,9 @@ export const MissionOrderProvider: React.FC<{ children: ReactNode }> = ({
     };
 
     if (type === "OM") {
-      setHistoryOM((prev) => [historyEntry, ...prev.slice(0, 4)]);
+      setHistoryOM((prev) => [historyEntry, ...prev.slice(0, 29)]);
     } else {
-      setHistoryList((prev) => [historyEntry, ...prev.slice(0, 4)]);
+      setHistoryList((prev) => [historyEntry, ...prev.slice(0, 29)]);
     }
   };
 

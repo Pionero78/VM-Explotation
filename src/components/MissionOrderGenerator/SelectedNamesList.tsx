@@ -44,31 +44,47 @@ const SelectedNamesList: React.FC = () => {
 
   const currentGroupData = getCurrentGroupData();
 
-  // ✅ NO MORE SORTING - Use original order directly
+  // Use original order directly
   const orderedSelectedNames = selectedNames;
 
-  const hdGroups = ["HD1", "HD2", "HD3", "HD4", "HD5"];
   const eclairageGroups = ["G6", "G7", "G8", "G9", "G10", "G11", "G12"];
 
-  const hdMembers = orderedSelectedNames.filter((m) =>
-    hdGroups.includes(m.group),
-  );
-  const dopMembers = orderedSelectedNames.filter((m) => m.group === "DOP");
-  const autresMembers = orderedSelectedNames.filter(
-    (m) => m.group === "Autres",
-  );
-  const machinistesMembers = orderedSelectedNames.filter(
-    (m) => m.group === "Machinistes",
-  );
-  const eclairageMembers = orderedSelectedNames.filter((m) =>
-    eclairageGroups.includes(m.group),
-  );
-  const fhMembers = orderedSelectedNames.filter((m) => m.group === "FH");
-  const chauffeursMembers = orderedSelectedNames.filter(
-    (m) => m.group === "Chauffeurs",
-  );
-  const tdaMembers = orderedSelectedNames.filter((m) => m.group === "TDA");
-  const fixeMembers = orderedSelectedNames.filter((m) => m.group === "Fixe");
+  // Groups that can be freely reordered together (no section headers)
+  const freeReorderGroups = [
+    "HD1",
+    "HD2",
+    "HD3",
+    "HD4",
+    "HD5",
+    "DOP",
+    "Autres",
+    "Machinistes",
+  ];
+
+  // Separate members into free reorder and sectioned groups
+  const freeReorderMembers = [];
+  const eclairageMembers = [];
+  const fhMembers = [];
+  const chauffeursMembers = [];
+  const tdaMembers = [];
+  const fixeMembers = [];
+
+  // Maintain original order while separating into groups
+  orderedSelectedNames.forEach((member) => {
+    if (freeReorderGroups.includes(member.group)) {
+      freeReorderMembers.push(member);
+    } else if (eclairageGroups.includes(member.group)) {
+      eclairageMembers.push(member);
+    } else if (member.group === "FH") {
+      fhMembers.push(member);
+    } else if (member.group === "Chauffeurs") {
+      chauffeursMembers.push(member);
+    } else if (member.group === "TDA") {
+      tdaMembers.push(member);
+    } else if (member.group === "Fixe") {
+      fixeMembers.push(member);
+    }
+  });
 
   // Fonction pour analyser le nom complet
   const parseFullName = (fullName: string) => {
@@ -81,7 +97,7 @@ const SelectedNamesList: React.FC = () => {
     return { lastName: fullName.toUpperCase(), firstName: "" };
   };
 
-  // Gestion du drag end avec react-beautiful-dnd
+  // Gestion du drag end avec react-beautiful-dnd - Allow full reordering
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
 
@@ -176,13 +192,17 @@ const SelectedNamesList: React.FC = () => {
     );
   };
 
-  const renderMembers = (members: any[], startIndex: number) =>
+  const renderMembers = (
+    members: any[],
+    startIndex: number,
+    droppableId: string = "selected-names",
+  ) =>
     members.map((member, index) => {
       const globalIndex = startIndex + index;
       return (
         <Draggable
-          key={member.name}
-          draggableId={`member-${member.name}`}
+          key={`${droppableId}-${member.name}`}
+          draggableId={`${droppableId}-${member.name}`}
           index={globalIndex}
         >
           {(provided, snapshot) => (
@@ -220,26 +240,6 @@ const SelectedNamesList: React.FC = () => {
     );
   }
 
-  // Calculate start indices for each group
-  let currentIndex = 0;
-  const hdStartIndex = currentIndex;
-  currentIndex += hdMembers.length;
-  const dopStartIndex = currentIndex;
-  currentIndex += dopMembers.length;
-  const autresStartIndex = currentIndex;
-  currentIndex += autresMembers.length;
-  const machinistesStartIndex = currentIndex;
-  currentIndex += machinistesMembers.length;
-  const eclairageStartIndex = currentIndex;
-  currentIndex += eclairageMembers.length;
-  const fhStartIndex = currentIndex;
-  currentIndex += fhMembers.length;
-  const chauffeursStartIndex = currentIndex;
-  currentIndex += chauffeursMembers.length;
-  const tdaStartIndex = currentIndex;
-  currentIndex += tdaMembers.length;
-  const fixeStartIndex = currentIndex;
-
   return (
     <div className="bg-white rounded border border-gray-200">
       {/* Header avec contrôles */}
@@ -251,8 +251,6 @@ const SelectedNamesList: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Export/Import */}
-
           <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
             <AlertDialogTrigger asChild>
               <Button
@@ -295,50 +293,273 @@ const SelectedNamesList: React.FC = () => {
                 ref={provided.innerRef}
                 className={snapshot.isDraggingOver ? "bg-blue-50" : ""}
               >
-                {/* Bloc 1 : HD1–HD5 + DOP + Autres + Machinistes (sans bandeaux) */}
-                {renderMembers(hdMembers, hdStartIndex)}
-                {renderMembers(dopMembers, dopStartIndex)}
-                {renderMembers(autresMembers, autresStartIndex)}
-                {renderMembers(machinistesMembers, machinistesStartIndex)}
+                {/* Free reorder section - HD1-HD5, DOP, Autres, Machinistes without headers */}
+                {freeReorderMembers.length > 0 && (
+                  <>{renderMembers(freeReorderMembers, 0, "free-reorder")}</>
+                )}
 
-                {/* Bloc 2 : ÉCLAIRAGE */}
+                {/* Sectioned groups with headers - these cannot be reordered with free reorder section */}
                 {eclairageMembers.length > 0 && (
-                  <>
+                  <div className="mt-4">
                     <SectionHeader title="ÉCLAIRAGE" />
-                    {renderMembers(eclairageMembers, eclairageStartIndex)}
-                  </>
+                    <div className="border-l-4 border-gray-300 pl-2">
+                      {eclairageMembers.map((member, index) => {
+                        const globalIndex = freeReorderMembers.length + index;
+                        const { lastName, firstName } = parseFullName(
+                          member.name,
+                        );
+                        const employment = getEmploymentForName(
+                          member.name,
+                          currentGroupData,
+                        ).toUpperCase();
+
+                        return (
+                          <div
+                            key={member.name}
+                            className="flex items-center py-1 px-2 hover:bg-gray-50"
+                            style={{ ...formStyle, ...rowSpacing }}
+                          >
+                            <div className="flex-1 flex items-center">
+                              <div className="w-8 text-center font-bold">
+                                {globalIndex + 1}.
+                              </div>
+                              <div className="flex-1 flex">
+                                <div className="w-1/3" style={columnSpacing}>
+                                  {lastName}
+                                </div>
+                                <div className="w-1/3" style={columnSpacing}>
+                                  {firstName}
+                                </div>
+                                <div className="w-1/3">{employment}</div>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeFromSelection(member.name)}
+                              className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600 ml-2"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
 
-                {/* Bloc 3 : FH = TRANSMISSION */}
                 {fhMembers.length > 0 && (
-                  <>
+                  <div className="mt-4">
                     <SectionHeader title="TRANSMISSION" />
-                    {renderMembers(fhMembers, fhStartIndex)}
-                  </>
+                    <div className="border-l-4 border-gray-300 pl-2">
+                      {fhMembers.map((member, index) => {
+                        const globalIndex =
+                          freeReorderMembers.length +
+                          eclairageMembers.length +
+                          index;
+                        const { lastName, firstName } = parseFullName(
+                          member.name,
+                        );
+                        const employment = getEmploymentForName(
+                          member.name,
+                          currentGroupData,
+                        ).toUpperCase();
+
+                        return (
+                          <div
+                            key={member.name}
+                            className="flex items-center py-1 px-2 hover:bg-gray-50"
+                            style={{ ...formStyle, ...rowSpacing }}
+                          >
+                            <div className="flex-1 flex items-center">
+                              <div className="w-8 text-center font-bold">
+                                {globalIndex + 1}.
+                              </div>
+                              <div className="flex-1 flex">
+                                <div className="w-1/3" style={columnSpacing}>
+                                  {lastName}
+                                </div>
+                                <div className="w-1/3" style={columnSpacing}>
+                                  {firstName}
+                                </div>
+                                <div className="w-1/3">{employment}</div>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeFromSelection(member.name)}
+                              className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600 ml-2"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
 
-                {/* Bloc 4 : CHAUFFEURS */}
                 {chauffeursMembers.length > 0 && (
-                  <>
+                  <div className="mt-4">
                     <SectionHeader title="CHAUFFEURS" />
-                    {renderMembers(chauffeursMembers, chauffeursStartIndex)}
-                  </>
+                    <div className="border-l-4 border-gray-300 pl-2">
+                      {chauffeursMembers.map((member, index) => {
+                        const globalIndex =
+                          freeReorderMembers.length +
+                          eclairageMembers.length +
+                          fhMembers.length +
+                          index;
+                        const { lastName, firstName } = parseFullName(
+                          member.name,
+                        );
+                        const employment = getEmploymentForName(
+                          member.name,
+                          currentGroupData,
+                        ).toUpperCase();
+
+                        return (
+                          <div
+                            key={member.name}
+                            className="flex items-center py-1 px-2 hover:bg-gray-50"
+                            style={{ ...formStyle, ...rowSpacing }}
+                          >
+                            <div className="flex-1 flex items-center">
+                              <div className="w-8 text-center font-bold">
+                                {globalIndex + 1}.
+                              </div>
+                              <div className="flex-1 flex">
+                                <div className="w-1/3" style={columnSpacing}>
+                                  {lastName}
+                                </div>
+                                <div className="w-1/3" style={columnSpacing}>
+                                  {firstName}
+                                </div>
+                                <div className="w-1/3">{employment}</div>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeFromSelection(member.name)}
+                              className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600 ml-2"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
 
-                {/* Bloc 5 : TDA */}
                 {tdaMembers.length > 0 && (
-                  <>
+                  <div className="mt-4">
                     <SectionHeader title="TDA" />
-                    {renderMembers(tdaMembers, tdaStartIndex)}
-                  </>
+                    <div className="border-l-4 border-gray-300 pl-2">
+                      {tdaMembers.map((member, index) => {
+                        const globalIndex =
+                          freeReorderMembers.length +
+                          eclairageMembers.length +
+                          fhMembers.length +
+                          chauffeursMembers.length +
+                          index;
+                        const { lastName, firstName } = parseFullName(
+                          member.name,
+                        );
+                        const employment = getEmploymentForName(
+                          member.name,
+                          currentGroupData,
+                        ).toUpperCase();
+
+                        return (
+                          <div
+                            key={member.name}
+                            className="flex items-center py-1 px-2 hover:bg-gray-50"
+                            style={{ ...formStyle, ...rowSpacing }}
+                          >
+                            <div className="flex-1 flex items-center">
+                              <div className="w-8 text-center font-bold">
+                                {globalIndex + 1}.
+                              </div>
+                              <div className="flex-1 flex">
+                                <div className="w-1/3" style={columnSpacing}>
+                                  {lastName}
+                                </div>
+                                <div className="w-1/3" style={columnSpacing}>
+                                  {firstName}
+                                </div>
+                                <div className="w-1/3">{employment}</div>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeFromSelection(member.name)}
+                              className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600 ml-2"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
 
-                {/* Bloc 6 : FIXE */}
                 {fixeMembers.length > 0 && (
-                  <>
+                  <div className="mt-4">
                     <SectionHeader title="FIXE" />
-                    {renderMembers(fixeMembers, fixeStartIndex)}
-                  </>
+                    <div className="border-l-4 border-gray-300 pl-2">
+                      {fixeMembers.map((member, index) => {
+                        const globalIndex =
+                          freeReorderMembers.length +
+                          eclairageMembers.length +
+                          fhMembers.length +
+                          chauffeursMembers.length +
+                          tdaMembers.length +
+                          index;
+                        const { lastName, firstName } = parseFullName(
+                          member.name,
+                        );
+                        const employment = getEmploymentForName(
+                          member.name,
+                          currentGroupData,
+                        ).toUpperCase();
+
+                        return (
+                          <div
+                            key={member.name}
+                            className="flex items-center py-1 px-2 hover:bg-gray-50"
+                            style={{ ...formStyle, ...rowSpacing }}
+                          >
+                            <div className="flex-1 flex items-center">
+                              <div className="w-8 text-center font-bold">
+                                {globalIndex + 1}.
+                              </div>
+                              <div className="flex-1 flex">
+                                <div className="w-1/3" style={columnSpacing}>
+                                  {lastName}
+                                </div>
+                                <div className="w-1/3" style={columnSpacing}>
+                                  {firstName}
+                                </div>
+                                <div className="w-1/3">{employment}</div>
+                              </div>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeFromSelection(member.name)}
+                              className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600 ml-2"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
 
                 {provided.placeholder}

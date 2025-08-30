@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import { TempoDevtools } from "tempo-devtools";
+/* import { TempoDevtools } from 'tempo-devtools'; [deprecated] */
 import {
   logDeploymentStatus,
   handleProductionError,
@@ -9,7 +9,7 @@ import {
 
 // Initialize Tempo Devtools only in development
 if (import.meta.env.VITE_TEMPO === "true") {
-  TempoDevtools.init();
+  /* TempoDevtools.init() [deprecated] */;
 }
 
 // Run deployment compatibility check
