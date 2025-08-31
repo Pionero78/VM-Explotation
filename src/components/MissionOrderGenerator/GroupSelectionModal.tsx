@@ -130,7 +130,7 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden bg-white border border-gray-200">
+      <DialogContent className="sm:max-w-[67.6rem] max-h-[90vh] overflow-hidden bg-white border border-gray-200">
         <DialogHeader className="border-b border-gray-200 pb-4">
           <DialogTitle className="flex items-center justify-between text-xl font-bold text-gray-800">
             <div className="flex items-center gap-3">
