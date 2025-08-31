@@ -9,6 +9,8 @@ import { useState, useEffect } from "react";
 import React from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import DeploymentWrapper from "@/components/DeploymentWrapper";
+import { AuthProvider } from "@/context/AuthContext";
+import ProtectedRoute from "@/components/Auth/ProtectedRoute";
 
 // Component to handle Tempo routes within Router context
 const TempoRoutes = () => {
@@ -95,15 +97,22 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <TempoRoutes />
-            <Routes>
-              <Route path="/" element={<AppContent />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-              {/* Add this before the catchall route */}
-              {import.meta.env.VITE_TEMPO === "true" && (
-                <Route path="/tempobook/*" />
-              )}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AuthProvider>
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <AppContent />
+                    </ProtectedRoute>
+                  }
+                />
+                {import.meta.env.VITE_TEMPO === "true" && (
+                  <Route path="/tempobook/*" />
+                )}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </AuthProvider>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>

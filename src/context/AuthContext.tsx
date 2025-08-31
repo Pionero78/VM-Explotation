@@ -7,6 +7,7 @@ import React, {
 } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 interface AuthContextType {
   user: User | null;
@@ -23,8 +24,9 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Session timeout: 3 hours in milliseconds
-const SESSION_TIMEOUT = 3 * 60 * 60 * 1000;
+// Session timeout: 60 minutes with 5-minute warning
+const SESSION_TIMEOUT = 60 * 60 * 1000;
+const WARNING_BEFORE = 5 * 60 * 1000;
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
@@ -45,6 +47,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isSessionLocked, setIsSessionLocked] = useState(false);
   const [rememberedEmail, setRememberedEmail] = useState("");
   const [sessionTimer, setSessionTimer] = useState<NodeJS.Timeout | null>(null);
+  const [warningTimer, setWarningTimer] = useState<NodeJS.Timeout | null>(null);
+  const [hasShownWarning, setHasShownWarning] = useState(false);
 
   // Function to lock the session
   const lockSession = useCallback(() => {
@@ -52,20 +56,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (sessionTimer) {
       clearTimeout(sessionTimer);
     }
-  }, [sessionTimer]);
+    if (warningTimer) {
+      clearTimeout(warningTimer);
+    }
+  }, [sessionTimer, warningTimer]);
 
   // Function to start session timer
   const startSessionTimer = useCallback(() => {
     if (sessionTimer) {
       clearTimeout(sessionTimer);
     }
+    if (warningTimer) {
+      clearTimeout(warningTimer);
+    }
+
+    setHasShownWarning(false);
+
+    const warningDelay = SESSION_TIMEOUT - WARNING_BEFORE;
+    const wTimer = setTimeout(
+      () => {
+        if (!hasShownWarning) {
+          setHasShownWarning(true);
+          toast.warning(
+            "Votre session sera verrouillée dans 5 minutes pour inactivité.",
+          );
+        }
+      },
+      Math.max(0, warningDelay),
+    );
 
     const timer = setTimeout(() => {
       lockSession();
     }, SESSION_TIMEOUT);
 
+    setWarningTimer(wTimer);
     setSessionTimer(timer);
-  }, [lockSession, sessionTimer]);
+  }, [lockSession, sessionTimer, warningTimer, hasShownWarning]);
 
   // Function to reset session timer (on user activity)
   const resetSessionTimer = useCallback(() => {
@@ -109,6 +135,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (sessionTimer) {
           clearTimeout(sessionTimer);
         }
+        if (warningTimer) {
+          clearTimeout(warningTimer);
+        }
+        setHasShownWarning(false);
         // Load remembered email from localStorage if no active session
         const storedEmail = localStorage.getItem("rememberedEmail");
         if (storedEmail) {
@@ -122,6 +152,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       subscription.unsubscribe();
       if (sessionTimer) {
         clearTimeout(sessionTimer);
+      }
+      if (warningTimer) {
+        clearTimeout(warningTimer);
       }
     };
   }, [startSessionTimer, sessionTimer]);
@@ -196,6 +229,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (sessionTimer) {
       clearTimeout(sessionTimer);
     }
+    if (warningTimer) {
+      clearTimeout(warningTimer);
+    }
+    setHasShownWarning(false);
     setIsSessionLocked(false);
 
     // Store email in localStorage before clearing it from state
