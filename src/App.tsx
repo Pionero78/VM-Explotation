@@ -34,13 +34,16 @@ const TempoRoutes = () => {
     loadRoutes();
   }, []);
 
+  // Always call useRoutes to maintain hook order
+  const routeElements = useRoutes(routes || []);
+
   if (loading) {
     return null;
   }
 
   if (import.meta.env.VITE_TEMPO === "true" && routes) {
     try {
-      return useRoutes(routes);
+      return routeElements;
     } catch (error) {
       console.warn("Error rendering tempo routes:", error);
       return null;

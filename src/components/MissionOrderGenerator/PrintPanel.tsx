@@ -630,35 +630,52 @@ const PrintPanel: React.FC = () => {
         <CardTitle>Imprimer</CardTitle>
         <CardDescription>Générez et imprimez les documents</CardDescription>
       </CardHeader>
-      <CardContent className="flex justify-center gap-6 flex-wrap">
-        <Button
-          className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
-          onClick={printMultipleOrders}
-        >
-          <Printer className="h-5 w-5" />
-          Imprimer OM
-        </Button>
-        <Button
-          className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
-          onClick={handlePartialPrint}
-        >
-          <CheckSquare className="h-5 w-5" />
-          Imprimer des OM sélectionnés
-        </Button>
-        <Button
-          className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
-          onClick={printList}
-        >
-          <Printer className="h-5 w-5" />
-          Imprimer la liste
-        </Button>
-        <Button
-          className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200"
-          onClick={exportListToExcel}
-        >
-          <FileSpreadsheet className="h-5 w-5" />
-          Exporter la liste imprimable (Excel)
-        </Button>
+      <CardContent className="flex flex-col gap-6">
+        {/* Mission Orders Group */}
+        <div className="flex flex-col gap-3">
+          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            Ordres de Mission
+          </h3>
+          <div className="flex justify-center gap-4 flex-wrap">
+            <Button
+              className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 bg-blue-600 hover:bg-blue-700 text-white border-0"
+              onClick={printMultipleOrders}
+            >
+              <Printer className="h-5 w-5" />
+              Imprimer OM
+            </Button>
+            <Button
+              className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 bg-indigo-600 hover:bg-indigo-700 text-white border-0"
+              onClick={handlePartialPrint}
+            >
+              <CheckSquare className="h-5 w-5" />
+              Imprimer des OM sélectionnés
+            </Button>
+          </div>
+        </div>
+
+        {/* Lists Group */}
+        <div className="flex flex-col gap-3">
+          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+            Listes
+          </h3>
+          <div className="flex justify-center gap-4 flex-wrap">
+            <Button
+              className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 bg-green-600 hover:bg-green-700 text-white border-0"
+              onClick={printList}
+            >
+              <Printer className="h-5 w-5" />
+              Imprimer la liste
+            </Button>
+            <Button
+              className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 bg-emerald-600 hover:bg-emerald-700 text-white border-0"
+              onClick={exportListToExcel}
+            >
+              <FileSpreadsheet className="h-5 w-5" />
+              Exporter la liste imprimable (Excel)
+            </Button>
+          </div>
+        </div>
       </CardContent>
 
       <Dialog
