@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogClose,
-} from "@/components/ui/dialog";
+} from "@/components/ui/ResizableMovableDialog";
 import { useMissionOrder } from "@/context/MissionOrderContext";
 import { GroupType } from "@/types";
 import { Users } from "lucide-react";
@@ -130,8 +130,8 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-[70rem] max-h-[90vh] overflow-hidden bg-white border border-gray-200">
-        <DialogHeader className="border-b border-gray-200 pb-4">
+      <DialogContent className="bg-white border border-gray-200 flex flex-col">
+        <DialogHeader className="border-b border-gray-200 pb-4 flex-shrink-0">
           <DialogTitle className="flex items-center justify-between text-xl font-bold text-gray-800">
             <div className="flex items-center gap-3">
               <span>Sélection {currentGroupId}</span>
@@ -142,10 +142,7 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div
-          className="flex-1 overflow-y-auto p-4"
-          style={{ maxHeight: "calc(90vh - 200px)" }}
-        >
+        <div className="flex-1 overflow-y-auto p-4">
           <DragDropContext onDragEnd={onDragEnd}>
             <Droppable droppableId={`modal-droppable-${currentGroupId}`}>
               {(provided, snapshot) => (
@@ -233,7 +230,7 @@ const GroupSelectionModal: React.FC<GroupSelectionModalProps> = ({
           </DragDropContext>
         </div>
 
-        <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+        <div className="flex justify-between items-center mt-auto pt-4 border-t border-gray-200 flex-shrink-0">
           <div className="text-sm text-gray-600">
             💡 <strong>Astuce :</strong> Glissez-déposez pour réorganiser les
             techniciens

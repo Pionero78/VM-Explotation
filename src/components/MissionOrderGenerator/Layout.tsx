@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
+} from "@/components/ui/ResizableMovableDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -275,7 +275,7 @@ const Layout: React.FC = () => {
         <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
           <DialogContent className="bg-white">
             <DialogHeader>
-              <DialogTitle className="text-gray-900">
+              <DialogTitle>
                 Accès sécurisé requis
               </DialogTitle>
               <DialogDescription>

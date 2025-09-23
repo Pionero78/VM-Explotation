@@ -18,16 +18,6 @@ import { RotateCcw, Upload } from "lucide-react";
 import { MissionOrderSettings } from "@/types";
 import CalibrationPresets from "./CalibrationPresets";
 import CustomPresetSlots from "./CustomPresetSlots";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-
 import { toast } from "sonner";
 
 const SettingsPanel: React.FC = () => {

@@ -11,6 +11,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import DeploymentWrapper from "@/components/DeploymentWrapper";
 import { AuthProvider } from "@/context/AuthContext";
 import ProtectedRoute from "@/components/Auth/ProtectedRoute";
+import { supabase } from "./lib/supabase";
 
 // Component to handle Tempo routes within Router context
 const TempoRoutes = () => {
@@ -54,43 +55,59 @@ const TempoRoutes = () => {
   return null;
 };
 
-const App = () => {
-  // Create a new QueryClient instance with production-ready configuration
-  const [queryClient] = useState(
-    () =>
-      new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: import.meta.env.PROD ? 3 : 1,
-            staleTime: 5 * 60 * 1000, // 5 minutes
-            refetchOnWindowFocus: false,
-          },
-          mutations: {
-            retry: import.meta.env.PROD ? 2 : 0,
-          },
-        },
-      }),
-  );
+const AuthGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [isReady, setIsReady] = useState(false);
 
-  // Use deployment wrapper to handle different environments
-  const AppContent = () => {
-    return (
-      <DeploymentWrapper>
-        <React.Suspense
-          fallback={
-            <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
-              <div className="flex flex-col items-center space-y-4">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-                <p className="text-gray-300">Chargement de l'application...</p>
-              </div>
-            </div>
-          }
-        >
-          <Index />
-        </React.Suspense>
-      </DeploymentWrapper>
-    );
-  };
+  useEffect(() => {
+    const handleForcedLogout = async () => {
+      if (localStorage.getItem('app_logout_on_next_boot') === '1') {
+        localStorage.removeItem('app_logout_on_next_boot');
+        localStorage.removeItem('app_session_locked');
+        await supabase.auth.signOut({ scope: 'global' });
+        window.location.reload();
+        // Return a promise that never resolves to halt rendering
+        return new Promise(() => {});
+      } else {
+        setIsReady(true);
+      }
+    };
+    handleForcedLogout();
+  }, []);
+
+  if (!isReady) {
+    return null; // Render nothing until the check is complete
+  }
+
+  return <>{children}</>;
+};
+
+const App = () => {
+  const [queryClient] = useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: import.meta.env.PROD ? 3 : 1,
+        staleTime: 5 * 60 * 1000,
+        refetchOnWindowFocus: false,
+      },
+      mutations: {
+        retry: import.meta.env.PROD ? 2 : 0,
+      },
+    },
+  }));
+
+  const AppContent = () => (
+    <DeploymentWrapper>
+      <React.Suspense
+        fallback={
+          <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-black">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+          </div>
+        }
+      >
+        <Index />
+      </React.Suspense>
+    </DeploymentWrapper>
+  );
 
   return (
     <ErrorBoundary>
@@ -99,23 +116,25 @@ const App = () => {
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <TempoRoutes />
-            <AuthProvider>
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <AppContent />
-                    </ProtectedRoute>
-                  }
-                />
-                {import.meta.env.VITE_TEMPO === "true" && (
-                  <Route path="/tempobook/*" />
-                )}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </AuthProvider>
+            <AuthGuard>
+              <TempoRoutes />
+              <AuthProvider>
+                <Routes>
+                  <Route
+                    path="/"
+                    element={
+                      <ProtectedRoute>
+                        <AppContent />
+                      </ProtectedRoute>
+                    }
+                  />
+                  {import.meta.env.VITE_TEMPO === "true" && (
+                    <Route path="/tempobook/*" />
+                  )}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AuthProvider>
+            </AuthGuard>
           </BrowserRouter>
         </TooltipProvider>
       </QueryClientProvider>
