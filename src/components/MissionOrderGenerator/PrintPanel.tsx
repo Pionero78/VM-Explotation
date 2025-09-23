@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/components/ui/ResizableMovableDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import React from "react";
 
@@ -645,7 +645,7 @@ const PrintPanel: React.FC = () => {
               Imprimer OM
             </Button>
             <Button
-              className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 bg-indigo-600 hover:bg-indigo-700 text-white border-0"
+              className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 bg-blue-600 hover:bg-blue-700 text-white border-0"
               onClick={handlePartialPrint}
             >
               <CheckSquare className="h-5 w-5" />
@@ -668,7 +668,7 @@ const PrintPanel: React.FC = () => {
               Imprimer la liste
             </Button>
             <Button
-              className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 bg-emerald-600 hover:bg-emerald-700 text-white border-0"
+              className="flex items-center gap-3 px-6 py-3 text-base font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-200 bg-green-600 hover:bg-green-700 text-white border-0"
               onClick={exportListToExcel}
             >
               <FileSpreadsheet className="h-5 w-5" />
@@ -682,7 +682,7 @@ const PrintPanel: React.FC = () => {
         open={showPartialPrintDialog}
         onOpenChange={setShowPartialPrintDialog}
       >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="flex flex-col">
           <DialogHeader>
             <DialogTitle>Sélectionner les techniciens à imprimer</DialogTitle>
             <DialogDescription>
@@ -691,7 +691,7 @@ const PrintPanel: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-4 py-4 flex-1 overflow-y-auto">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">
                 {selectedForPrint.length} / {orderedSelectedNames.length}{" "}
