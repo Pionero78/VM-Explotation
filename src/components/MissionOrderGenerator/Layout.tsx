@@ -218,7 +218,7 @@ const Layout: React.FC = () => {
                             <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">
                               🧾 Version
                             </span>
-                            <span className="font-semibold text-lg">v2.0</span>
+                            <span className="font-semibold text-lg">v2.1</span>
                           </div>
 
                           <div className="flex items-center gap-3">
