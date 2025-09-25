@@ -301,77 +301,257 @@ const PrintPanel: React.FC = () => {
       return { lastName: fullName, firstName: "" };
     };
 
-    // Créer les données Excel
-    const excelData: any[] = [];
+    const sheetRows: string[][] = [];
+    const sectionRowIndexes: number[] = [];
+    const spacerRowIndexes: number[] = [];
+    const dataRowIndexes: number[] = [];
 
-    // En-tête du document
-    excelData.push(["LISTE DES TECHNICIENS POUR LA RETRANSMISSION DE"]);
-    excelData.push([""]); // Ligne vide
-    excelData.push(["ÉVÉNEMENT :", formData.motif || "ACTIVITÉ OFFICIELLE"]);
-    excelData.push(["LIEU :", formData.destination || "AÉROPORT D'ALGER"]);
-    excelData.push([
-      "DATE :",
-      `DU ${formData.dateDepart ? formatDate(formData.dateDepart) : ""} AU ${formData.dateRetour ? formatDate(formData.dateRetour) : ""}`,
+    const eventValue = formData.motif || "ACTIVITÉ OFFICIELLE";
+    const locationValue = formData.destination || "AÉROPORT D'ALGER";
+    const dateValue = `DU ${
+      formData.dateDepart ? formatDate(formData.dateDepart) : ""
+    } AU ${formData.dateRetour ? formatDate(formData.dateRetour) : ""}`;
+
+    sheetRows.push([
+      "LISTE DES TECHNICIENS POUR LA RETRANSMISSION DE",
+      "",
+      "",
     ]);
-    excelData.push([""]); // Ligne vide
+    sheetRows.push(["", "", ""]);
+    sheetRows.push(["ÉVÉNEMENT :", eventValue, ""]);
+    sheetRows.push(["LIEU :", locationValue, ""]);
+    sheetRows.push(["DATE :", dateValue, ""]);
+    sheetRows.push(["", "", ""]);
+    sheetRows.push(["NOM", "PRÉNOM", "FONCTION"]);
 
-    // Fonction pour ajouter les membres à Excel
-    const addMembersToExcel = (members: any[]) => {
+    const headerRowIndex = sheetRows.length - 1;
+
+    const addDataRow = (lastName: string, firstName: string, employment: string) => {
+      sheetRows.push([
+        lastName.toUpperCase(),
+        firstName.toUpperCase(),
+        employment,
+      ]);
+      dataRowIndexes.push(sheetRows.length - 1);
+    };
+
+    const addMembersToSheet = (members: Person[]) => {
       members.forEach((item) => {
         const { lastName, firstName } = parseFullName(item.name);
         const employment = getEmploymentForName(item.name, currentGroupData);
-        excelData.push([
-          lastName.toUpperCase(),
-          firstName.toUpperCase(),
-          employment,
-        ]);
+        addDataRow(lastName, firstName, employment);
       });
     };
 
-    // Bloc 1 : HD1–HD5 + DOP + Autres + Machinistes (sans bandeaux)
-    addMembersToExcel(hdMembers);
-    addMembersToExcel(dopMembers);
-    addMembersToExcel(autresMembers);
-    addMembersToExcel(machinistesMembers);
+    const addSectionWithMembers = (title: string, members: Person[]) => {
+      if (members.length === 0) {
+        return;
+      }
 
-    // Bloc 2 : ÉCLAIRAGE
-    if (eclairageMembers.length > 0) {
-      excelData.push(["ÉCLAIRAGE"]);
-      addMembersToExcel(eclairageMembers);
-    }
+      if (sheetRows.length > headerRowIndex + 1) {
+        sheetRows.push(["", "", ""]);
+        spacerRowIndexes.push(sheetRows.length - 1);
+      }
 
-    // Bloc 3 : FH = TRANSMISSION
-    if (fhMembers.length > 0) {
-      excelData.push(["TRANSMISSION"]);
-      addMembersToExcel(fhMembers);
-    }
+      sheetRows.push([title, "", ""]);
+      sectionRowIndexes.push(sheetRows.length - 1);
+      addMembersToSheet(members);
+    };
 
-    // Bloc 4 : CHAUFFEURS
-    if (chauffeursMembers.length > 0) {
-      excelData.push(["CHAUFFEURS"]);
-      addMembersToExcel(chauffeursMembers);
-    }
+    addMembersToSheet(hdMembers);
+    addMembersToSheet(dopMembers);
+    addMembersToSheet(autresMembers);
+    addMembersToSheet(machinistesMembers);
 
-    // Bloc 5 : TDA
-    if (tdaMembers.length > 0) {
-      excelData.push(["TDA"]);
-      addMembersToExcel(tdaMembers);
-    }
+    addSectionWithMembers("ÉCLAIRAGE", eclairageMembers);
+    addSectionWithMembers("TRANSMISSION", fhMembers);
+    addSectionWithMembers("CHAUFFEURS", chauffeursMembers);
+    addSectionWithMembers("TDA", tdaMembers);
+    addSectionWithMembers("FIXE", fixeMembers);
 
-    // Bloc 6 : FIXE
-    if (fixeMembers.length > 0) {
-      excelData.push(["FIXE"]);
-      addMembersToExcel(fixeMembers);
-    }
-
-    // Créer le workbook et la worksheet
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    const ws = XLSX.utils.aoa_to_sheet(sheetRows);
 
-    // Ajouter la worksheet au workbook
+    const merges: XLSX.Range[] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 2 } },
+    ];
+
+    sectionRowIndexes.forEach((rowIndex) => {
+      merges.push({ s: { r: rowIndex, c: 0 }, e: { r: rowIndex, c: 2 } });
+    });
+
+    ws["!merges"] = merges;
+
+    ws["!cols"] = [
+      { wch: 22 },
+      { wch: 20 },
+      { wch: 45 },
+    ];
+
+    const rows: XLSX.RowInfo[] = [];
+    rows[0] = { hpt: 30 };
+    rows[1] = { hpt: 10 };
+    rows[5] = { hpt: 10 };
+    rows[headerRowIndex] = { hpt: 22 };
+
+    spacerRowIndexes.forEach((rowIndex) => {
+      rows[rowIndex] = { hpt: 8 };
+    });
+
+    sectionRowIndexes.forEach((rowIndex) => {
+      rows[rowIndex] = { hpt: 20 };
+    });
+
+    dataRowIndexes.forEach((rowIndex) => {
+      if (!rows[rowIndex]) {
+        rows[rowIndex] = { hpt: 18 };
+      }
+    });
+
+    ws["!rows"] = rows;
+
+    const CM_TO_INCH = 0.3937007874;
+    ws["!margins"] = {
+      left: 1 * CM_TO_INCH,
+      right: 1 * CM_TO_INCH,
+      top: 1 * CM_TO_INCH,
+      bottom: 1 * CM_TO_INCH,
+      header: 0.8 * CM_TO_INCH,
+      footer: 0.8 * CM_TO_INCH,
+    };
+
+    ws["!gridlines"] = { showGridLines: false };
+    ws["!pageSetup"] = {
+      orientation: "portrait",
+      paperSize: 9,
+      fitToWidth: 1,
+      fitToHeight: 0,
+    };
+
+    ws["!headerFooter"] = {
+      oddFooter: "Page &P / &N",
+    };
+
+    ws["!freeze"] = {
+      xSplit: 0,
+      ySplit: headerRowIndex + 1,
+      topLeftCell: XLSX.utils.encode_cell({ r: headerRowIndex + 1, c: 0 }),
+    };
+
+    const applyStyle = (rowIndex: number, columnIndex: number, style: XLSX.CellStyle) => {
+      const cellAddress = XLSX.utils.encode_cell({ r: rowIndex, c: columnIndex });
+      const cell = ws[cellAddress];
+      if (cell) {
+        cell.s = style;
+      }
+    };
+
+    const thinBorder = { style: "thin", color: { rgb: "000000" } } as const;
+    const mediumBorder = { style: "medium", color: { rgb: "000000" } } as const;
+
+    applyStyle(0, 0, {
+      font: { name: "Arial", sz: 17, bold: true, color: { rgb: "FFFFFF" } },
+      alignment: { horizontal: "center", vertical: "center" },
+      fill: { fgColor: { rgb: "000000" } },
+    });
+
+    [2, 3, 4].forEach((rowIndex) => {
+      applyStyle(rowIndex, 0, {
+        font: { name: "Arial", sz: 11, bold: true, color: { rgb: "000000" } },
+        alignment: { horizontal: "left", vertical: "center" },
+      });
+
+      applyStyle(rowIndex, 1, {
+        font: { name: "Arial", sz: 11, color: { rgb: "000000" } },
+        alignment: { horizontal: "left", vertical: "center" },
+      });
+    });
+
+    [0, 1, 2].forEach((columnIndex) => {
+      applyStyle(headerRowIndex, columnIndex, {
+        font: { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        fill: { fgColor: { rgb: "000000" } },
+        border: {
+          top: thinBorder,
+          bottom: thinBorder,
+          left: thinBorder,
+          right: thinBorder,
+        },
+      });
+    });
+
+    sectionRowIndexes.forEach((rowIndex) => {
+      applyStyle(rowIndex, 0, {
+        font: { name: "Arial", sz: 11, bold: true, color: { rgb: "FFFFFF" } },
+        alignment: { horizontal: "left", vertical: "center", indent: 1 },
+        fill: { fgColor: { rgb: "000000" } },
+        border: {
+          top: mediumBorder,
+          bottom: thinBorder,
+          left: thinBorder,
+          right: thinBorder,
+        },
+      });
+    });
+
+    dataRowIndexes.forEach((rowIndex) => {
+      [0, 1, 2].forEach((columnIndex) => {
+        const alignment =
+          columnIndex === 2
+            ? { horizontal: "left", vertical: "center", wrapText: true }
+            : { horizontal: "left", vertical: "center" };
+
+        applyStyle(rowIndex, columnIndex, {
+          font: { name: "Arial", sz: 11, color: { rgb: "000000" } },
+          alignment,
+          border: {
+            top: thinBorder,
+            bottom: thinBorder,
+            left: thinBorder,
+            right: thinBorder,
+          },
+        });
+      });
+    });
+
+    const sheetIndex = wb.SheetNames.length;
     XLSX.utils.book_append_sheet(wb, ws, "Liste Imprimable");
 
-    // Télécharger le fichier
+    if (!wb.Workbook) {
+      wb.Workbook = { Sheets: [], Names: [] };
+    }
+
+    if (!wb.Workbook.Names) {
+      wb.Workbook.Names = [];
+    }
+
+    const lastRowNumber = sheetRows.length;
+    const printTitleRef = "'Liste Imprimable'!$7:$7";
+    const printAreaRef = `'Liste Imprimable'!$A$1:$C$${lastRowNumber}`;
+
+    wb.Workbook.Names = wb.Workbook.Names.filter(
+      (name) => name.Name !== "_xlnm.Print_Titles" && name.Name !== "_xlnm.Print_Area",
+    );
+
+    wb.Workbook.Names.push(
+      {
+        Name: "_xlnm.Print_Titles",
+        Sheet: sheetIndex,
+        Ref: printTitleRef,
+      },
+      {
+        Name: "_xlnm.Print_Area",
+        Sheet: sheetIndex,
+        Ref: printAreaRef,
+      },
+    );
+
+    ws["!pageSetup"] = {
+      ...(ws["!pageSetup"] || {}),
+      printArea: printAreaRef,
+    };
+
     XLSX.writeFile(wb, "liste_imprimable.xlsx");
 
     toast.success("Liste exportée avec succès", {
